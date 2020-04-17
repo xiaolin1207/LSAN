@@ -32,7 +32,9 @@ class StructuredSelfAttention(BasicModule):
         self.weight1 = torch.nn.Linear(lstm_hid_dim * 2, 1)
         self.weight2 = torch.nn.Linear(lstm_hid_dim * 2, 1)
 
-        self.output_layer = torch.nn.Linear(lstm_hid_dim*2, n_classes)
+#         self.output_layer = torch.nn.Linear(lstm_hid_dim*2, n_classes)
+        self.linear_final = torch.nn.Linear(2*lstm_hid_dim, lstm_hid_dim)  
+        self.output_layer = torch.nn.Linear(lstm_hid_dim, 1)
         self.embedding_dropout = torch.nn.Dropout(p=0.3)
         self.batch_size = batch_size
         self.lstm_hid_dim = lstm_hid_dim
@@ -81,7 +83,8 @@ class StructuredSelfAttention(BasicModule):
         doc = weight1*label_att+weight2*self_att
         # there two method, for simple, just add
         # also can use linear to do it
-        avg_sentence_embeddings = torch.sum(doc, 1)/self.n_classes
-
-        pred = torch.sigmoid(self.output_layer(avg_sentence_embeddings))
+        out = F.relu(self.linear_final(doc), inplace=True)  
+        pred = torch.sigmoid(self.output_layer(out).squeeze(-1))  # [batch,L]
+#         avg_sentence_embeddings = torch.sum(doc, 1)/self.n_classes
+#         pred = torch.sigmoid(self.output_layer(avg_sentence_embeddings))
         return pred
